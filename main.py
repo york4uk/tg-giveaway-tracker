@@ -172,29 +172,21 @@ async def unignore_chat(client: Client, message: Message):
     await message.reply(f"✅ Чат `{chat_id}` удалён из игнор-листа.")
 
 # ▶️ Запуск бота
+# Флаг, чтобы отправить стартовое сообщение только один раз
+STARTUP_MESSAGE_SENT = False
+
+@app.on_message(filters.private & filters.text)
+async def on_first_message(client: Client, message: Message):
+    global STARTUP_MESSAGE_SENT
+    if not STARTUP_MESSAGE_SENT:
+        try:
+            await client.send_message(OWNER_ID, "✅ Бот успешно запущен и готов отслеживать розыгрыши!")
+            print("[TEST] ✅ Стартовое сообщение отправлено.")
+            STARTUP_MESSAGE_SENT = True
+        except Exception as e:
+            print(f"[TEST] ❌ Ошибка отправки стартового сообщения: {e}")
+
 if __name__ == "__main__":
     print("🚀 Giveaway Tracker запускается...")
-
-    async def main():
-        try:
-            # Подключаемся к Telegram
-            await app.start()
-            print("[+] Подключение к Telegram...")
-
-            # Отправляем стартовое сообщение
-            await app.send_message(OWNER_ID, "✅ Бот успешно запущен и готов отслеживать розыгрыши!")
-            print("[TEST] ✅ Стартовое сообщение отправлено.")
-
-            # Ждём событий бесконечно (аналог app.run() но с контролем)
-            print("[+] Бот работает. Ожидание сообщений...")
-            await app.run_until_disconnected()
-
-        except Exception as e:
-            print(f"[!] Критическая ошибка: {e}")
-        finally:
-            await app.stop()
-            print("[!] Бот остановлен.")
-
-    # Запускаем асинхронную функцию
-    app.loop.run_until_complete(main())
+    app.run()
 
