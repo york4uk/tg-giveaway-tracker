@@ -5,23 +5,23 @@ from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.types import Message
 
-# ⚙️ Получаем переменные окружения от Railway (через Secrets)
+# ⚙️ Получаем переменные окружения от Railway
 API_ID = os.getenv("API_ID")
 API_HASH = os.getenv("API_HASH")
 OWNER_ID = int(os.getenv("OWNER_ID"))
-SESSION_NAME = os.getenv("SESSION_NAME", "my_account")  # по умолчанию
-SESSION_STRING = os.getenv("SESSION_STRING")  # для авторизации без ввода номера
+SESSION_NAME = os.getenv("SESSION_NAME", "my_account")
+SESSION_STRING = os.getenv("SESSION_STRING")
 
 # 🔑 Ключевые слова для поиска розыгрышей
 DEFAULT_KEYWORDS = {
-    "розыгрыш", "разыгрываем",
-    "дарим",
+    "розыгрыш", "конкурс", "giveaway", "выиграй", "подарок", "разыгрываем",
+    "участвую", "дарим",  "подарим"
 }
 
 # 🚫 Игнорируемые чаты (по ID)
 IGNORED_CHATS = set()
 
-# 🧩 Пользовательские ключевые слова (можно расширять командами)
+# 🧩 Пользовательские ключевые слова
 USER_KEYWORDS = set(DEFAULT_KEYWORDS)
 
 # 🤖 Инициализация клиента Pyrogram
@@ -40,17 +40,15 @@ def is_giveaway(text: str) -> bool:
             return True
     return False
 
-# 🔗 Функция: получить кликабельную ссылку на сообщение
-def get_message_link(chat_id: int, message_id: int) -> str:
+# 🔗 Асинхронная функция: получить кликабельную ссылку на сообщение
+async def get_message_link(chat_id: int, message_id: int) -> str:
     try:
-        # Пытаемся получить информацию о чате
-        chat = app.get_chat(chat_id)
+        chat = await app.get_chat(chat_id)
         if chat.username:
             return f"https://t.me/{chat.username}/{message_id}"
         else:
             return f"tg://openmessage?chat_id={chat_id}&message_id={message_id}"
     except Exception:
-        # Если чат неизвестен — используем универсальную ссылку
         return f"tg://openmessage?chat_id={chat_id}&message_id={message_id}"
 
 # 👂 Обработчик всех текстовых сообщений в группах
@@ -65,7 +63,7 @@ async def monitor_chats(client: Client, message: Message):
     # Проверить, пост ли это с розыгрышем
     if is_giveaway(message.text or ""):
         chat_title = message.chat.title or "Без названия"
-        message_link = get_message_link(chat_id, message.id)
+        message_link = await get_message_link(chat_id, message.id)  # ✅ await здесь
         detected_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # 📩 Формируем уведомление
@@ -174,22 +172,7 @@ async def unignore_chat(client: Client, message: Message):
     await message.reply(f"✅ Чат `{chat_id}` удалён из игнор-листа.")
 
 # ▶️ Запуск бота
-# Флаг, чтобы отправить стартовое сообщение только один раз
-STARTUP_MESSAGE_SENT = False
-
-@app.on_message(filters.private & filters.text)
-async def on_first_message(client: Client, message: Message):
-    global STARTUP_MESSAGE_SENT
-    if not STARTUP_MESSAGE_SENT:
-        try:
-            await client.send_message(OWNER_ID, "✅ Бот успешно запущен и готов отслеживать розыгрыши!")
-            print("[TEST] ✅ Стартовое сообщение отправлено.")
-            STARTUP_MESSAGE_SENT = True
-        except Exception as e:
-            print(f"[TEST] ❌ Ошибка отправки стартового сообщения: {e}")
-
 if __name__ == "__main__":
     print("🚀 Giveaway Tracker запускается...")
     app.run()
-
 
