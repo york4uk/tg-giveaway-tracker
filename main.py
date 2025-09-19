@@ -43,12 +43,14 @@ def is_giveaway(text: str) -> bool:
 # 🔗 Функция: получить кликабельную ссылку на сообщение
 def get_message_link(chat_id: int, message_id: int) -> str:
     try:
+        # Пытаемся получить информацию о чате
         chat = app.get_chat(chat_id)
         if chat.username:
             return f"https://t.me/{chat.username}/{message_id}"
         else:
             return f"tg://openmessage?chat_id={chat_id}&message_id={message_id}"
     except Exception:
+        # Если чат неизвестен — используем универсальную ссылку
         return f"tg://openmessage?chat_id={chat_id}&message_id={message_id}"
 
 # 👂 Обработчик всех текстовых сообщений в группах
@@ -189,4 +191,5 @@ async def on_first_message(client: Client, message: Message):
 if __name__ == "__main__":
     print("🚀 Giveaway Tracker запускается...")
     app.run()
+
 
